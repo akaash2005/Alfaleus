@@ -8,7 +8,7 @@ import 'main_navigation.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  await requestPermissions(); // 🔐 Request location and phone call permissions
+  await requestPermissions();
   runApp(const MyApp());
 }
 
@@ -36,8 +36,21 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class LoginSignupScreen extends StatelessWidget {
+class LoginSignupScreen extends StatefulWidget {
   const LoginSignupScreen({super.key});
+
+  @override
+  State<LoginSignupScreen> createState() => _LoginSignupScreenState();
+}
+
+class _LoginSignupScreenState extends State<LoginSignupScreen> {
+  bool showLogin = true;
+
+  void toggleForm() {
+    setState(() {
+      showLogin = !showLogin;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,20 +73,22 @@ class LoginSignupScreen extends StatelessWidget {
                 alignment: Alignment.center,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Text(
-                      'Sign in to your\nAccount',
+                      showLogin ? 'Sign in to your\nAccount' : 'Create a\nNew Account',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
-                      'Enter your email and password to log in',
-                      style: TextStyle(color: Colors.white70),
+                      showLogin
+                          ? 'Enter your email and password to log in'
+                          : 'Fill in the details to sign up',
+                      style: const TextStyle(color: Colors.white70),
                     ),
                   ],
                 ),
@@ -86,28 +101,12 @@ class LoginSignupScreen extends StatelessWidget {
                   color: Colors.white,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
                 ),
-                child: DefaultTabController(
-                  length: 2,
-                  child: Column(
-                    children: const [
-                      TabBar(
-                        indicatorColor: Color(0xFF438BC7),
-                        labelColor: Colors.black,
-                        tabs: [
-                          Tab(text: 'Login'),
-                          Tab(text: 'Signup'),
-                        ],
-                      ),
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            LoginCard(),
-                            SignupCard(),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                child: Column(
+                  children: [
+                    Expanded(child: showLogin
+                        ? LoginCard(onToggle: toggleForm)
+                        : SignupCard(onToggle: toggleForm)),
+                  ],
                 ),
               ),
             ],
@@ -119,121 +118,116 @@ class LoginSignupScreen extends StatelessWidget {
 }
 
 class LoginCard extends StatelessWidget {
-  const LoginCard({super.key});
+  final VoidCallback onToggle;
+  const LoginCard({super.key, required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
     final emailController = TextEditingController();
     final passController = TextEditingController();
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 20),
-      child: Column(
-        children: [
-          TextField(
-            controller: emailController,
-            decoration: const InputDecoration(labelText: 'Email'),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: passController,
-            obscureText: true,
-            decoration: const InputDecoration(labelText: 'Password'),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Checkbox(value: false, onChanged: (_) {}),
-                  const Text("Remember me"),
-                ],
-              ),
-              TextButton(
-                onPressed: () {},
-                child: const Text("Forgot Password?"),
-              )
-            ],
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF438BC7),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onPressed: () async {
-                try {
-                  final userCredential = await FirebaseAuth.instance
-                      .signInWithEmailAndPassword(
-                    email: emailController.text.trim(),
-                    password: passController.text.trim(),
-                  );
-
-                  final uid = userCredential.user!.uid;
-                  final userDoc = await FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(uid)
-                      .get();
-
-                  if (!userDoc.exists) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                            'User data not found. Please contact support.'),
-                      ),
-                    );
-                    return;
-                  }
-
-                  final name = userDoc['name'];
-
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => MainNavigation(name: name),
-                    ),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Login failed')),
-                  );
-                }
-              },
-              child: const Text("Log In"),
+    return Column(
+      children: [
+        TextField(
+          controller: emailController,
+          decoration: const InputDecoration(labelText: 'Email'),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: passController,
+          obscureText: true,
+          decoration: const InputDecoration(labelText: 'Password'),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Checkbox(value: false, onChanged: (_) {}),
+                const Text("Remember me"),
+              ],
             ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text("Don’t have an account? "),
-              GestureDetector(
-                onTap: () {
-                  DefaultTabController.of(context)?.animateTo(1);
-                },
-                child: const Text(
-                  "Sign Up",
-                  style: TextStyle(
-                    color: Color(0xFF438BC7),
-                    fontWeight: FontWeight.bold,
+            TextButton(
+              onPressed: () {},
+              child: const Text("Forgot Password?"),
+            )
+          ],
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF438BC7),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () async {
+              try {
+                final userCredential = await FirebaseAuth.instance
+                    .signInWithEmailAndPassword(
+                  email: emailController.text.trim(),
+                  password: passController.text.trim(),
+                );
+
+                final uid = userCredential.user!.uid;
+                final userDoc = await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(uid)
+                    .get();
+
+                if (!userDoc.exists) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('User data not found. Please contact support.')),
+                  );
+                  return;
+                }
+
+                final name = userDoc['name'];
+
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (_) => MainNavigation(name: name),
                   ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Login failed')),
+                );
+              }
+            },
+            child: const Text("Log In"),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text("Don’t have an account? "),
+            GestureDetector(
+              onTap: onToggle,
+              child: const Text(
+                "Sign Up",
+                style: TextStyle(
+                  color: Color(0xFF438BC7),
+                  fontWeight: FontWeight.bold,
                 ),
-              )
-            ],
-          )
-        ],
-      ),
+              ),
+            )
+          ],
+        )
+      ],
     );
   }
 }
 
 class SignupCard extends StatelessWidget {
-  const SignupCard({super.key});
+  final VoidCallback onToggle;
+  const SignupCard({super.key, required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
@@ -241,71 +235,85 @@ class SignupCard extends StatelessWidget {
     final emailController = TextEditingController();
     final passController = TextEditingController();
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 20),
-      child: Column(
-        children: [
-          TextField(
-            controller: nameController,
-            decoration: const InputDecoration(labelText: 'Full Name'),
+    return Column(
+      children: [
+        TextField(
+          controller: nameController,
+          decoration: const InputDecoration(labelText: 'Full Name'),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: emailController,
+          decoration: const InputDecoration(labelText: 'Email'),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: passController,
+          obscureText: true,
+          decoration: const InputDecoration(labelText: 'Password'),
+        ),
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF438BC7),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () async {
+              try {
+                final userCredential = await FirebaseAuth.instance
+                    .createUserWithEmailAndPassword(
+                  email: emailController.text.trim(),
+                  password: passController.text.trim(),
+                );
+
+                final uid = userCredential.user!.uid;
+
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(uid)
+                    .set({
+                  'name': nameController.text.trim(),
+                  'email': emailController.text.trim(),
+                  'role': 'executive',
+                });
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Signed up as Executive')),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Signup failed: email may be in use')),
+                );
+              }
+            },
+            child: const Text("Sign Up"),
           ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: emailController,
-            decoration: const InputDecoration(labelText: 'Email'),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: passController,
-            obscureText: true,
-            decoration: const InputDecoration(labelText: 'Password'),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF438BC7),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text("Already have an account? "),
+            GestureDetector(
+              onTap: onToggle,
+              child: const Text(
+                "Log In",
+                style: TextStyle(
+                  color: Color(0xFF438BC7),
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              onPressed: () async {
-                try {
-                  final userCredential = await FirebaseAuth.instance
-                      .createUserWithEmailAndPassword(
-                    email: emailController.text.trim(),
-                    password: passController.text.trim(),
-                  );
-
-                  final uid = userCredential.user!.uid;
-
-                  await FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(uid)
-                      .set({
-                    'name': nameController.text.trim(),
-                    'email': emailController.text.trim(),
-                    'role': 'executive',
-                  });
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Signed up as Executive')),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Signup failed: email may be in use')),
-                  );
-                }
-              },
-              child: const Text("Sign Up"),
-            ),
-          ),
-        ],
-      ),
+            )
+          ],
+        )
+      ],
     );
   }
 }
