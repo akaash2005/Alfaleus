@@ -1,4 +1,3 @@
-// home_page.dart
 import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {
@@ -9,11 +8,22 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Welcome')),
+      appBar: AppBar(title: const Text('Welcome')),
       body: Center(
-        child: Text(
-          'Hello, $name!',
-          style: TextStyle(fontSize: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Hello, $name!',
+              style: const TextStyle(fontSize: 24),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'This is your dashboard home.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16),
+            ),
+          ],
         ),
       ),
     );
