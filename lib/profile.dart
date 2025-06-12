@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'main.dart'; // for LoginSignupScreen
+import 'main.dart'; 
+import 'package:flutter/cupertino.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -23,6 +24,30 @@ class ProfileScreen extends StatelessWidget {
     return snapshot.data();
   }
 
+  Future<Map<String, int>> _fetchTaskCounts(String userId) async {
+    int pending = 0;
+    int completed = 0;
+
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return {'pending': 0, 'completed': 0};
+
+      final querySnapshot = await FirebaseFirestore.instance
+    .collection('leads')
+    .where('assignedTo', isEqualTo: uid)
+    .get();
+
+    for (var doc in querySnapshot.docs) {
+      final data = doc.data();
+      if (data['status'] == 'pending') {
+        pending++;
+      } else if (data['status'] == 'completed') {
+        completed++;
+      }
+    }
+
+    return {'pending': pending, 'completed': completed};
+  }
+
   String _getInitials(String name) {
     if (name.isEmpty) return '?';
 
@@ -33,17 +58,12 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F9FC),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF438BC7),
-        title: const Text('Profile', style: TextStyle(color: Colors.white)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: () => _signOut(context),
-          ),
-        ],
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text('Profile', style: TextStyle(color: Colors.black)),
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: FutureBuilder<Map<String, dynamic>?>(
         future: _fetchUserData(),
@@ -57,83 +77,118 @@ class ProfileScreen extends StatelessWidget {
           }
 
           final userData = snapshot.data!;
+          final uid = FirebaseAuth.instance.currentUser?.uid;
           final name = userData['name'] ?? 'N/A';
           final email = userData['email'] ?? 'N/A';
           final role = userData['role'] ?? 'N/A';
           final initials = _getInitials(name);
 
-          return SingleChildScrollView(
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height - kToolbarHeight,
-              child: Align(
-                alignment: const Alignment(0, -0.4), // slightly above center
+          return FutureBuilder<Map<String, int>>(
+            future: _fetchTaskCounts(uid!),
+            builder: (context, taskSnap) {
+              final pending = taskSnap.data?['pending'] ?? 0;
+              final completed = taskSnap.data?['completed'] ?? 0;
+
+              return SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.all(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 30, horizontal: 20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 12,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    width: double.infinity,
-                    constraints: const BoxConstraints(maxWidth: 400),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircleAvatar(
-                          radius: 50,
-                          backgroundColor: const Color(0xFF438BC7),
-                          child: Text(
-                            initials,
-                            style: const TextStyle(
-                              fontSize: 32,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 30),
-                        Text(
-                          name,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 20),
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundColor: const Color(0xF7F7F7F7),
+                        child: Text(
+                          initials,
                           style: const TextStyle(
-                            fontSize: 24,
+                            fontSize: 32,
+                            color: Colors.black,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF438BC7),
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        Text(
-                          email,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.black87,
-                          ),
-                          textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
                         ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Role: $role',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.black54,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        email,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          color: Colors.black87,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Role: $role',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          color: Colors.black54,
+                        ),
+                      ),
+                      const SizedBox(height: 30),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _countCard('Pending', pending, 'Tasks'),
+                          _countCard('Completed', completed, 'Done'),
+                        ],
+                      ),
+                      const SizedBox(height: 40),
+                      SizedBox(
+                        width: double.infinity,
+                        child: CupertinoButton(
+                          color: const Color(0xF7F7F7F7),
+                          borderRadius: BorderRadius.circular(12),
+                          onPressed: () => _signOut(context),
+                          child: const Text(
+                            'Sign Out',
+                            style: TextStyle(color: Colors.red),
                           ),
                         ),
-                      ],
-                    ),
+                      )
+                    ],
                   ),
                 ),
-              ),
-            ),
+              );
+            },
           );
         },
+      ),
+    );
+  }
+
+  Widget _countCard(String title, int count, String subtitle) {
+    return Container(
+      width: 150,
+      height: 125,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Color(0xFFE0E0E0), width: 1.5),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text('$count', style: const TextStyle(fontSize: 20)),
+          Text(subtitle, style: const TextStyle(fontSize: 12)),
+        ],
       ),
     );
   }

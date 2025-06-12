@@ -3,12 +3,17 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'main_navigation.dart';
+import 'background_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   await requestPermissions();
+  await initializeService();
+  
+
   runApp(const MyApp());
 }
 
@@ -117,15 +122,29 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
   }
 }
 
-class LoginCard extends StatelessWidget {
+class LoginCard extends StatefulWidget {
   final VoidCallback onToggle;
   const LoginCard({super.key, required this.onToggle});
 
   @override
-  Widget build(BuildContext context) {
-    final emailController = TextEditingController();
-    final passController = TextEditingController();
+  State<LoginCard> createState() => _LoginCardState();
+}
 
+class _LoginCardState extends State<LoginCard> {
+  final emailController = TextEditingController();
+  final passController = TextEditingController();
+  bool rememberMe = false;
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
         TextField(
@@ -135,15 +154,34 @@ class LoginCard extends StatelessWidget {
         const SizedBox(height: 10),
         TextField(
           controller: passController,
-          obscureText: true,
-          decoration: const InputDecoration(labelText: 'Password'),
+          obscureText: _obscurePassword,
+          decoration: InputDecoration(
+            labelText: 'Password',
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscurePassword = !_obscurePassword;
+                });
+              },
+            ),
+          ),
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
-                Checkbox(value: false, onChanged: (_) {}),
+                Checkbox(
+                  value: rememberMe,
+                  onChanged: (value) {
+                    setState(() {
+                      rememberMe = value!;
+                    });
+                  },
+                ),
                 const Text("Remember me"),
               ],
             ),
@@ -209,7 +247,7 @@ class LoginCard extends StatelessWidget {
           children: [
             const Text("Don’t have an account? "),
             GestureDetector(
-              onTap: onToggle,
+              onTap: widget.onToggle,
               child: const Text(
                 "Sign Up",
                 style: TextStyle(
@@ -225,16 +263,30 @@ class LoginCard extends StatelessWidget {
   }
 }
 
-class SignupCard extends StatelessWidget {
+class SignupCard extends StatefulWidget {
   final VoidCallback onToggle;
   const SignupCard({super.key, required this.onToggle});
 
   @override
-  Widget build(BuildContext context) {
-    final nameController = TextEditingController();
-    final emailController = TextEditingController();
-    final passController = TextEditingController();
+  State<SignupCard> createState() => _SignupCardState();
+}
 
+class _SignupCardState extends State<SignupCard> {
+  final nameController = TextEditingController();
+  final emailController = TextEditingController();
+  final passController = TextEditingController();
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
         TextField(
@@ -249,8 +301,20 @@ class SignupCard extends StatelessWidget {
         const SizedBox(height: 10),
         TextField(
           controller: passController,
-          obscureText: true,
-          decoration: const InputDecoration(labelText: 'Password'),
+          obscureText: _obscurePassword,
+          decoration: InputDecoration(
+            labelText: 'Password',
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscurePassword = !_obscurePassword;
+                });
+              },
+            ),
+          ),
         ),
         const SizedBox(height: 20),
         SizedBox(
@@ -302,7 +366,7 @@ class SignupCard extends StatelessWidget {
           children: [
             const Text("Already have an account? "),
             GestureDetector(
-              onTap: onToggle,
+              onTap: widget.onToggle,
               child: const Text(
                 "Log In",
                 style: TextStyle(

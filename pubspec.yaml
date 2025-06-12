@@ -40,13 +40,19 @@ dependencies:
   geolocator: ^11.0.0
   intl: ^0.18.1
   geocoding: ^2.1.0
-  flutter_background_service: ^5.0.5
+  phone_state: ^2.1.1
+  flutter_background_service: ^5.0.0
   permission_handler: ^11.3.0
-  
- 
+  flutter_background_service_android: ^6.3.0  
+  shared_preferences: ^2.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  build_runner: ^2.4.6
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.3.1
+  
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -54,6 +60,11 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
