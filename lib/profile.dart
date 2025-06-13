@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'main.dart'; 
+import 'main.dart';
 import 'package:flutter/cupertino.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -29,12 +29,12 @@ class ProfileScreen extends StatelessWidget {
     int completed = 0;
 
     final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid == null) return {'pending': 0, 'completed': 0};
+    if (uid == null) return {'pending': 0, 'completed': 0};
 
-      final querySnapshot = await FirebaseFirestore.instance
-    .collection('leads')
-    .where('assignedTo', isEqualTo: uid)
-    .get();
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('leads')
+        .where('assignedTo', isEqualTo: uid)
+        .get();
 
     for (var doc in querySnapshot.docs) {
       final data = doc.data();
@@ -50,9 +50,24 @@ class ProfileScreen extends StatelessWidget {
 
   String _getInitials(String name) {
     if (name.isEmpty) return '?';
-
     final words = name.trim().split(RegExp(r'\s+'));
     return words.map((w) => w[0].toUpperCase()).take(2).join();
+  }
+
+  Widget _infoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 80, child: Text(label, style: const TextStyle(fontSize: 16))),
+          const SizedBox(width: 20),
+          Expanded(
+              child: Text(value,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500))),
+        ],
+      ),
+    );
   }
 
   @override
@@ -64,6 +79,13 @@ class ProfileScreen extends StatelessWidget {
         elevation: 0,
         title: const Text('Profile', style: TextStyle(color: Colors.black)),
         iconTheme: const IconThemeData(color: Colors.black),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            color: const Color(0xF6F6F6),
+            height: 1,
+          ),
+        ),
       ),
       body: FutureBuilder<Map<String, dynamic>?>(
         future: _fetchUserData(),
@@ -89,74 +111,65 @@ class ProfileScreen extends StatelessWidget {
               final pending = taskSnap.data?['pending'] ?? 0;
               final completed = taskSnap.data?['completed'] ?? 0;
 
-              return SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 20),
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: const Color(0xF7F7F7F7),
-                        child: Text(
-                          initials,
-                          style: const TextStyle(
-                            fontSize: 32,
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontSize: 24,
+              return Column(
+                children: [
+                  const SizedBox(height: 24),
+                  CircleAvatar(
+                    radius: 40,
+                    backgroundColor: const Color(0xFFF2F2F2),
+                    child: Text(
+                      initials,
+                      style: const TextStyle(
+                          fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        email,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          color: Colors.black87,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Role: $role',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          color: Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _countCard('Pending', pending, 'Tasks'),
-                          _countCard('Completed', completed, 'Done'),
-                        ],
-                      ),
-                      const SizedBox(height: 40),
-                      SizedBox(
-                        width: double.infinity,
-                        child: CupertinoButton(
-                          color: const Color(0xF7F7F7F7),
-                          borderRadius: BorderRadius.circular(12),
-                          onPressed: () => _signOut(context),
-                          child: const Text(
-                            'Sign Out',
-                            style: TextStyle(color: Colors.red),
-                          ),
-                        ),
-                      )
-                    ],
+                          color: Colors.black),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 10),
+                  Text(name,
+                      style:
+                          const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 30),
+                  const Divider(height: 1),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        _infoRow("Role", role),
+                        _infoRow("Mail", email),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  const SizedBox(height: 24),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        Expanded(child: _countCard('Pending', pending, 'Tasks')),
+                        const SizedBox(width: 16),
+                        Expanded(child: _countCard('Completed', completed, 'Done')),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: CupertinoButton(
+                        color: const Color(0xFFF2F2F2),
+                        borderRadius: BorderRadius.circular(12),
+                        onPressed: () => _signOut(context),
+                        child: const Text(
+                          'Sign Out',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
               );
             },
           );
@@ -167,9 +180,8 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _countCard(String title, int count, String subtitle) {
     return Container(
-      width: 150,
-      height: 125,
-      padding: const EdgeInsets.all(12),
+      height: 110,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Color(0xFFE0E0E0), width: 1.5),
@@ -186,6 +198,7 @@ class ProfileScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
           Text('$count', style: const TextStyle(fontSize: 20)),
           Text(subtitle, style: const TextStyle(fontSize: 12)),
         ],

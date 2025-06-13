@@ -24,7 +24,7 @@ class _MainNavigationState extends State<MainNavigation> {
     super.initState();
     _pages = [
       HomePage(name: widget.name),
-      const PhoneScreen(),
+      PhoneScreen(name: widget.name),
       TaskScreen(),
       const ChecklistScreen(),
       ProfileScreen(),

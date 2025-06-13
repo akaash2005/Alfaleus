@@ -12,8 +12,6 @@ void main() async {
   await Firebase.initializeApp();
   await requestPermissions();
   await initializeService();
-  
-
   runApp(const MyApp());
 }
 
@@ -55,6 +53,28 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
     setState(() {
       showLogin = !showLogin;
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    checkAndUpdateLocationStatus();
+  }
+
+  Future<void> checkAndUpdateLocationStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+
+    if (uid != null) {
+      final status = await Permission.location.status;
+      final granted = status == PermissionStatus.granted;
+
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'location_enabled': granted,
+      });
+
+      prefs.setBool('location_enabled', granted);
+    }
   }
 
   @override
@@ -186,7 +206,25 @@ class _LoginCardState extends State<LoginCard> {
               ],
             ),
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                final email = emailController.text.trim();
+                if (email.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter your email first')),
+                  );
+                  return;
+                }
+
+                FirebaseAuth.instance.sendPasswordResetEmail(email: email).then((_) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Password reset email sent')),
+                  );
+                }).catchError((e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Error sending reset email')),
+                  );
+                });
+              },
               child: const Text("Forgot Password?"),
             )
           ],
@@ -338,6 +376,9 @@ class _SignupCardState extends State<SignupCard> {
 
                 final uid = userCredential.user!.uid;
 
+                final status = await Permission.location.status;
+                final granted = status == PermissionStatus.granted;
+
                 await FirebaseFirestore.instance
                     .collection('users')
                     .doc(uid)
@@ -345,6 +386,7 @@ class _SignupCardState extends State<SignupCard> {
                   'name': nameController.text.trim(),
                   'email': emailController.text.trim(),
                   'role': 'executive',
+                  'location_enabled': granted,
                 });
 
                 ScaffoldMessenger.of(context).showSnackBar(

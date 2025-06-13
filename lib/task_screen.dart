@@ -134,7 +134,7 @@ class _TaskScreenState extends State<TaskScreen> {
         SnackBar(content: Text('Task started.')),
       );
 
-      taskTimers[taskId] = Timer.periodic(Duration(minutes: 1), (_) async {
+      taskTimers[taskId] = Timer.periodic(Duration(minutes: 5), (_) async {
         final pos = await Geolocator.getCurrentPosition();
         await FirebaseFirestore.instance.collection('executive_locations').add({
           'uid': uid,

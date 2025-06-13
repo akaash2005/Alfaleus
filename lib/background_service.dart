@@ -40,7 +40,7 @@ void onStart(ServiceInstance service) async {
   Timer? locationTimer;
 
   void startLocationTimer() {
-    locationTimer = Timer.periodic(Duration(minutes: 1), (timer) async {
+    locationTimer = Timer.periodic(Duration(minutes: 5), (timer) async {
       try {
         if (currentTaskId == null) {
           print('[BG SERVICE] No task running ❌');

@@ -28,35 +28,33 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   }
 
   void _submitForm() async {
-  if (_formKey.currentState!.validate()) {
-    final formData = {
-      'Field 1': _field1.text,
-      'Field 2': _field2.text,
-      'Field 3': _field3.text,
-      'Field 4': _field4.text,
-    };
+    if (_formKey.currentState!.validate()) {
+      final formData = {
+        'Doctor,Hospital Name': _field1.text,
+        'Product Ordered': _field2.text,
+        'Deal Value': _field3.text,
+        'Quantity': _field4.text,
+      };
 
-    final uid = FirebaseAuth.instance.currentUser?.uid;
+      final uid = FirebaseAuth.instance.currentUser?.uid;
 
-    if (uid == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('User not logged in')),
-      );
-      return;
+      if (uid == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('User not logged in')),
+        );
+        return;
+      }
+
+      await FirebaseFirestore.instance.collection('quotations').add({
+        'uid': uid,
+        'taskId': widget.taskId,
+        'timestamp': DateTime.now(),
+        ...formData,
+      });
+
+      Navigator.pop(context, formData);
     }
-
-    // Upload to Firestore under 'quotations'
-    await FirebaseFirestore.instance.collection('quotations').add({
-      'uid': uid,
-      'taskId': widget.taskId,
-      'timestamp': DateTime.now(),
-      ...formData,
-    });
-
-    Navigator.pop(context, formData); // Optionally pass back formData
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -71,25 +69,32 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
               TextFormField(
                 controller: _field1,
                 decoration: InputDecoration(labelText: 'Doctor,Hospital Name'),
-                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                validator: (val) =>
+                    val == null || val.isEmpty ? 'Required' : null,
               ),
               TextFormField(
                 controller: _field2,
                 decoration: InputDecoration(labelText: 'Product Ordered'),
-                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                validator: (val) =>
+                    val == null || val.isEmpty ? 'Required' : null,
               ),
               TextFormField(
                 controller: _field3,
                 decoration: InputDecoration(labelText: 'Deal Value'),
-                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                validator: (val) =>
+                    val == null || val.isEmpty ? 'Required' : null,
               ),
               TextFormField(
                 controller: _field4,
                 decoration: InputDecoration(labelText: 'Quantity'),
-                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                validator: (val) =>
+                    val == null || val.isEmpty ? 'Required' : null,
               ),
               SizedBox(height: 20),
-              ElevatedButton(onPressed: _submitForm, child: Text('Submit')),
+              ElevatedButton(
+                onPressed: _submitForm,
+                child: Text('Submit'),
+              ),
             ],
           ),
         ),
